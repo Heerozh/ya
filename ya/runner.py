@@ -1,0 +1,207 @@
+"""Core benchmark runner implementation."""
+
+import asyncio
+import importlib.util
+import inspect
+import multiprocessing
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Tuple
+
+import pandas as pd
+
+
+def discover_benchmarks(script_path: str) -> Dict[str, Callable]:
+    """
+    Discover all benchmark functions from a script.
+    
+    Returns a dict mapping benchmark names to their function objects.
+    """
+    # Load the script as a module
+    spec = importlib.util.spec_from_file_location("benchmark_module", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load script: {script_path}")
+    
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["benchmark_module"] = module
+    spec.loader.exec_module(module)
+    
+    # Find all functions starting with 'benchmark_' but not ending with '_setup' or '_teardown'
+    benchmarks = {}
+    for name, obj in inspect.getmembers(module):
+        if (name.startswith("benchmark_") and 
+            not name.endswith("_setup") and 
+            not name.endswith("_teardown") and
+            inspect.iscoroutinefunction(obj)):
+            benchmarks[name] = obj
+    
+    return benchmarks
+
+
+async def run_single_executor(
+    benchmark_func: Callable,
+    benchmark_name: str,
+    module: Any,
+    duration_minutes: int,
+) -> List[Tuple[int, float]]:
+    """
+    Run a single async executor for a benchmark.
+    
+    Returns a list of [calendar_minute, execution_time] tuples.
+    """
+    results = []
+    
+    # Run setup function if exists
+    setup_name = f"{benchmark_name}_setup"
+    if hasattr(module, setup_name):
+        setup_func = getattr(module, setup_name)
+        if inspect.iscoroutinefunction(setup_func):
+            await setup_func()
+    
+    # Record start time
+    start_time = time.time()
+    end_time = start_time + (duration_minutes * 60)
+    
+    # Run benchmark loop
+    while time.time() < end_time:
+        # Record calendar minute and execution time
+        call_start = time.time()
+        calendar_minute = int(datetime.fromtimestamp(call_start).strftime("%M"))
+        
+        # Execute benchmark
+        await benchmark_func()
+        
+        # Calculate execution time
+        execution_time = time.time() - call_start
+        
+        # Store result
+        results.append((calendar_minute, execution_time))
+    
+    # Run teardown function if exists
+    teardown_name = f"{benchmark_name}_teardown"
+    if hasattr(module, teardown_name):
+        teardown_func = getattr(module, teardown_name)
+        if inspect.iscoroutinefunction(teardown_func):
+            await teardown_func()
+    
+    return results
+
+
+async def run_worker_async(
+    script_path: str,
+    benchmark_name: str,
+    num_tasks: int,
+    duration_minutes: int,
+) -> List[Tuple[int, float]]:
+    """
+    Run multiple async tasks for a single benchmark in a worker process.
+    
+    Returns combined results from all tasks.
+    """
+    # Load the module in the worker process
+    spec = importlib.util.spec_from_file_location("benchmark_module", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load script: {script_path}")
+    
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["benchmark_module"] = module
+    spec.loader.exec_module(module)
+    
+    # Get the benchmark function
+    benchmark_func = getattr(module, benchmark_name)
+    
+    # Create tasks using asyncio.gather
+    tasks = [
+        run_single_executor(benchmark_func, benchmark_name, module, duration_minutes)
+        for _ in range(num_tasks)
+    ]
+    
+    # Gather results from all tasks
+    all_results = await asyncio.gather(*tasks)
+    
+    # Flatten results
+    combined_results = []
+    for task_results in all_results:
+        combined_results.extend(task_results)
+    
+    return combined_results
+
+
+def worker_process_func(args: Tuple[str, str, int, int]) -> List[Tuple[int, float]]:
+    """
+    Worker process function for multiprocessing.Pool.map.
+    
+    This function runs the async event loop for the worker.
+    """
+    script_path, benchmark_name, num_tasks, duration_minutes = args
+    
+    # Run the async worker
+    return asyncio.run(
+        run_worker_async(script_path, benchmark_name, num_tasks, duration_minutes)
+    )
+
+
+def run_benchmarks(
+    script_path: str,
+    num_tasks: int,
+    num_workers: int,
+    duration_minutes: int,
+) -> pd.DataFrame:
+    """
+    Run all benchmarks and return results as a pandas DataFrame.
+    
+    Args:
+        script_path: Path to the benchmark script
+        num_tasks: Number of async tasks per worker
+        num_workers: Number of worker processes
+        duration_minutes: Duration to run each benchmark in minutes
+    
+    Returns:
+        DataFrame with benchmark results
+    """
+    # Discover benchmarks
+    benchmarks = discover_benchmarks(script_path)
+    
+    if not benchmarks:
+        print("No benchmark functions found (functions should start with 'benchmark_')")
+        return pd.DataFrame()
+    
+    print(f"Found {len(benchmarks)} benchmark(s): {', '.join(benchmarks.keys())}")
+    print(f"Running with {num_workers} workers, {num_tasks} tasks per worker, for {duration_minutes} minute(s)")
+    
+    all_data = []
+    
+    # Run each benchmark
+    for benchmark_name in benchmarks.keys():
+        print(f"\nRunning benchmark: {benchmark_name}")
+        
+        # Prepare arguments for workers
+        worker_args = [
+            (script_path, benchmark_name, num_tasks, duration_minutes)
+            for _ in range(num_workers)
+        ]
+        
+        # Run workers using multiprocessing.Pool.map
+        with multiprocessing.Pool(processes=num_workers) as pool:
+            worker_results = pool.map(worker_process_func, worker_args)
+        
+        # Combine results from all workers
+        for worker_idx, results in enumerate(worker_results):
+            for calendar_minute, execution_time in results:
+                all_data.append({
+                    "benchmark": benchmark_name,
+                    "worker": worker_idx,
+                    "calendar_minute": calendar_minute,
+                    "execution_time": execution_time,
+                })
+        
+        print(f"  Collected {sum(len(r) for r in worker_results)} data points")
+    
+    # Create DataFrame
+    if all_data:
+        df = pd.DataFrame(all_data)
+        return df
+    else:
+        return pd.DataFrame()
