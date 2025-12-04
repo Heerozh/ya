@@ -16,40 +16,38 @@ def calculate_cpm(df):
     """
     计算每个函数每分钟的执行次数
     """
-    # 确保timestamp是datetime类型（如果原始是毫秒时间戳）
-    if pd.api.types.is_numeric_dtype(df['timestamp']):
-        # 假设是毫秒时间戳
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    elif isinstance(df['timestamp'].iloc[0], (int, float)):
-        # 如果是秒级时间戳
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+    df = df.copy()
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
     
     # 提取分钟级时间
     df['minute'] = df['timestamp'].dt.floor('min')
     
     # 按函数名和分钟分组统计
-    cpm_stats = df.groupby(['function_name', 'minute']).size().reset_index(name='execution_count')
+    cpm_stats = df.groupby(['benchmark', 'minute']).size().reset_index(name='execution_count')
     
     # 重命名列
     cpm_stats = cpm_stats.rename(columns={
         'minute': 'execution_time',
         'execution_count': 'execution_count'
     })
+
+    cpm_stats['execution_count'] = cpm_stats['execution_count'].apply(lambda x: f"{x:,}")  # 千分位格式化
     
-    return cpm_stats[['function_name', 'execution_time', 'execution_count']]
+    return cpm_stats[['benchmark', 'execution_time', 'execution_count']]
 
 def calculate_cps(df):
     """
     计算每个函数的平均每秒执行次数，去掉头尾10%的数据
     """
+    df = df.copy()
     # 按函数名分组
-    functions = df['function_name'].unique()
+    functions = df['benchmark'].unique()
     
     # 准备结果DataFrame
     results = {}
     
     for func in functions:
-        func_data = df[df['function_name'] == func].copy()
+        func_data = df[df['benchmark'] == func].copy()
         
         # 按时间戳排序
         func_data = func_data.sort_values('timestamp').reset_index(drop=True)
@@ -77,7 +75,7 @@ def calculate_cps(df):
         else:
             cps = len(trimmed_data)  # 如果时间跨度为0，返回执行次数
         
-        results[func] = round(cps, 2)
+        results[func] = f"{cps:,.2f}"  # 千分位，保留2位小数
     
     # 转换为DataFrame（横排格式）
     cps_df = pd.DataFrame([results])

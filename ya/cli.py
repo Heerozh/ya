@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from .runner import run_benchmarks
+from .stat import calculate_cpm, calculate_cps
 
 
 def main():
@@ -55,24 +56,22 @@ def main():
             num_workers=args.workers,
             duration_minutes=args.duration,
         )
+        # import pandas as pd
+        # results_df = pd.read_csv("benchmark_results.csv")  # For testing purpose
         
         # Display results
         if results_df is not None and not results_df.empty:
             print("\n" + "=" * 80)
             print("Benchmark Results Summary")
             print("=" * 80)
-            
-            # Group by benchmark and show statistics
-            for benchmark_name in results_df['benchmark'].unique():
-                bench_data = results_df[results_df['benchmark'] == benchmark_name]
-                print(f"\nBenchmark: {benchmark_name}")
-                print(f"  Total executions: {len(bench_data)}")
-                print(f"  Execution time (seconds):")
-                print(f"    Mean:   {bench_data['execution_time'].mean():.6f}")
-                print(f"    Median: {bench_data['execution_time'].median():.6f}")
-                print(f"    Min:    {bench_data['execution_time'].min():.6f}")
-                print(f"    Max:    {bench_data['execution_time'].max():.6f}")
-                print(f"    Std:    {bench_data['execution_time'].std():.6f}")
+
+            cpm_stats = calculate_cpm(results_df)
+            print("\nCalls Per Minute (CPM) Statistics:")
+            print(cpm_stats.to_markdown())
+
+            cpm_stats = calculate_cps(results_df)
+            print("\nAverage CPS (Calls Per Second) per Function:")
+            print(cpm_stats.to_markdown(index=False))
             
             print("=" * 80)
             
