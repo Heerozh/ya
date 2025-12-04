@@ -57,8 +57,9 @@ def main():
             duration_minutes=args.duration,
         )
         # import pandas as pd
+
         # results_df = pd.read_csv("benchmark_results.csv")  # For testing purpose
-        
+
         # Display results
         if results_df is not None and not results_df.empty:
             print("\n" + "=" * 80)
@@ -77,19 +78,19 @@ def main():
             print("\nFunction Execution Time Statistics:")
             print(k_stats.to_markdown())
 
-            
             print("=" * 80)
-            
+
             # Optionally save to CSV
             output_file = "benchmark_results.csv"
             results_df.to_csv(output_file, index=False)
             print(f"\nFull results saved to: {output_file}")
         else:
             print("No benchmark results collected.")
-        
+
         return 0
     except Exception as e:
         print(f"Error running benchmarks: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         return 1
