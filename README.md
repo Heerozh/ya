@@ -1,6 +1,8 @@
 # ya
 
-Ya is a Python async benchmark framework for measuring the performance of asynchronous functions.
+ya is a Python async benchmark framework for measuring the performance of asynchronous functions.
+
+ya 是一个简易的 Python 高性能异步基准测试框架，主要用于压测吞吐量。
 
 ## Installation
 
@@ -66,13 +68,16 @@ ya my_benchmark.py -n 3 -w 2 -t 1
 
 ## Output
 
-Ya displays summary statistics for each benchmark:
-- Total executions
-- Mean, median, min, max execution times
-- Standard deviation
+ya 会收集所有基准测试结果并生成统计数据。
 
 Full results are saved to `benchmark_results.csv` with columns:
+
 - `benchmark`: Benchmark function name
 - `worker`: Worker process ID
 - `calendar_minute`: Calendar minute when the call started
-- `execution_time`: Time taken to execute the benchmark function (in seconds)
+- `execution_time`: Time taken to execute the benchmark function (in milliseconds)
+
+收集的统计数据为：
+
+- CPM (calls per minute), average Throughput (CPS calls per second)
+- Mean, k95, k99 response times

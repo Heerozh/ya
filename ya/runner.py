@@ -7,7 +7,6 @@ import multiprocessing
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
 import pandas as pd
@@ -93,7 +92,7 @@ async def run_single_executor(
         await benchmark_func()
         
         # Calculate execution time
-        execution_time = time.time() - call_start
+        execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
         
         # Store result
         results.append((calendar_minute, execution_time))
