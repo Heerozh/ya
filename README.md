@@ -77,7 +77,32 @@ Full results are saved to `benchmark_results.csv` with columns:
 - `timestamp`: Start time when the call started
 - `execution_time`: Time taken to execute the benchmark function (in milliseconds)
 
-收集的统计数据为：
+收集的统计数据为 Statistics：
 
 - CPM (calls per minute), average Throughput (CPS calls per second)
 - Mean, k95, k99 response times
+
+输出示例 Output Example：
+
+## Benchmark Results Summary
+
+Calls Per Minute (CPM) Statistics:
+
+| benchmark                 | execution_time      | execution_count |
+| :------------------------ | :------------------ | :-------------- |
+| benchmark_cpu_calculation | 2025-12-04 17:11:00 | 19,181          |
+| benchmark_simple_sleep    | 2025-12-04 17:11:00 | 19,100          |
+
+Average CPS (Calls Per Second) per Function:
+
+|                           | 0            |
+| :------------------------ | :----------- |
+| benchmark_cpu_calculation | 3,187,834.68 |
+| benchmark_simple_sleep    | 3,190,359.31 |
+
+Function Execution Time Statistics:
+
+|                           |  Mean |   k95 |   k99 | Count |   Min |   Max | Median |
+| :------------------------ | ----: | ----: | ----: | ----: | ----: | ----: | -----: |
+| benchmark_cpu_calculation | 15.66 | 16.13 | 16.28 | 19181 |  1.15 | 16.78 |  15.57 |
+| benchmark_simple_sleep    | 15.72 | 16.08 | 16.15 | 19100 | 15.11 | 21.15 |  15.56 |
