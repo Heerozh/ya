@@ -93,7 +93,7 @@ Calls Per Minute (CPM) Statistics:
 
 Average CPS (Calls Per Second) per Function:
 
-|                           | 0            |
+|                           | CPS          |
 | :------------------------ | :----------- |
 | benchmark_cpu_calculation | 3,187,834.68 |
 | benchmark_simple_sleep    | 3,190,359.31 |

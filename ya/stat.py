@@ -90,7 +90,7 @@ def calculate_cps(df):
         else:
             cps = len(trimmed_data)  # 如果时间跨度为0，返回执行次数
 
-        results[func] = f"{cps:,.2f}"  # 千分位，保留2位小数
+        results[func] = {"CPS": f"{cps:,.2f}"}  # 千分位，保留2位小数
 
     # 转换为DataFrame（横排格式）
     cps_df = pd.DataFrame.from_dict(results, orient="index")
