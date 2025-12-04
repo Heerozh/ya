@@ -82,9 +82,7 @@ Full results are saved to `benchmark_results.csv` with columns:
 - CPM (calls per minute), average Throughput (CPS calls per second)
 - Mean, k95, k99 response times
 
-输出示例 Output Example：
-
-## Benchmark Results Summary
+## 输出示例 Output Example：
 
 Calls Per Minute (CPM) Statistics:
 
