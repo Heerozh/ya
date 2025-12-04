@@ -3,6 +3,7 @@
 ya is a Python async benchmark framework for measuring the performance of asynchronous functions.
 
 ya 是一个简易的 Python 高性能异步基准测试框架，主要用于压测吞吐量。
+因为基于异步，所以可以很少的 workers 跑出非常高的吞吐量。
 
 ## Installation
 
