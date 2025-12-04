@@ -13,6 +13,31 @@ from typing import Any, Callable, Dict, List, Tuple
 import pandas as pd
 
 
+def load_benchmark_module(script_path: str) -> Any:
+    """
+    Load a benchmark script as a Python module.
+    
+    Args:
+        script_path: Path to the benchmark script
+        
+    Returns:
+        The loaded module object
+    """
+    # Create a unique module name based on the script path and timestamp
+    # to avoid conflicts when loading multiple modules
+    module_name = f"benchmark_module_{abs(hash(script_path))}"
+    
+    spec = importlib.util.spec_from_file_location(module_name, script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load script: {script_path}")
+    
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    
+    return module
+
+
 def discover_benchmarks(script_path: str) -> Dict[str, Callable]:
     """
     Discover all benchmark functions from a script.
@@ -20,13 +45,7 @@ def discover_benchmarks(script_path: str) -> Dict[str, Callable]:
     Returns a dict mapping benchmark names to their function objects.
     """
     # Load the script as a module
-    spec = importlib.util.spec_from_file_location("benchmark_module", script_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not load script: {script_path}")
-    
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["benchmark_module"] = module
-    spec.loader.exec_module(module)
+    module = load_benchmark_module(script_path)
     
     # Find all functions starting with 'benchmark_' but not ending with '_setup' or '_teardown'
     benchmarks = {}
@@ -68,7 +87,7 @@ async def run_single_executor(
     while time.time() < end_time:
         # Record calendar minute and execution time
         call_start = time.time()
-        calendar_minute = int(datetime.fromtimestamp(call_start).strftime("%M"))
+        calendar_minute = datetime.fromtimestamp(call_start).minute
         
         # Execute benchmark
         await benchmark_func()
@@ -101,13 +120,7 @@ async def run_worker_async(
     Returns combined results from all tasks.
     """
     # Load the module in the worker process
-    spec = importlib.util.spec_from_file_location("benchmark_module", script_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not load script: {script_path}")
-    
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["benchmark_module"] = module
-    spec.loader.exec_module(module)
+    module = load_benchmark_module(script_path)
     
     # Get the benchmark function
     benchmark_func = getattr(module, benchmark_name)
