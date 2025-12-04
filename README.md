@@ -74,7 +74,7 @@ Full results are saved to `benchmark_results.csv` with columns:
 
 - `benchmark`: Benchmark function name
 - `worker`: Worker process ID
-- `calendar_minute`: Calendar minute when the call started
+- `timestamp`: Start time when the call started
 - `execution_time`: Time taken to execute the benchmark function (in milliseconds)
 
 收集的统计数据为：

@@ -9,6 +9,7 @@
 列为 （函数名1，函数名2, ...）
 每行为各个函数的平均每秒执行次数，注意去掉头尾10%的timestamp数据，作为预热和冷却。
 """
+import numpy as np
 import pandas as pd
 
 
@@ -78,6 +79,31 @@ def calculate_cps(df):
         results[func] = f"{cps:,.2f}"  # 千分位，保留2位小数
     
     # 转换为DataFrame（横排格式）
-    cps_df = pd.DataFrame([results])
+    cps_df = pd.DataFrame.from_dict(results, orient='index')
     
     return cps_df
+
+# 计算按函数分组的统计
+def calculate_kstat(df):
+    """按函数分组计算统计"""
+    df = df.copy()
+    # 按函数名分组
+    functions = df['benchmark'].unique()
+    
+    # 准备结果DataFrame
+    results = {}
+    
+    for func in functions:
+        func_data = df[df['benchmark'] == func].execution_time.copy()
+
+        results[func] = {
+            'Mean': round(func_data.mean(), 2),
+            'k95': round(np.percentile(func_data, 95), 2),
+            'k99': round(np.percentile(func_data, 99), 2),
+            'Count': len(func_data),
+            'Min': round(func_data.min(), 2),
+            'Max': round(func_data.max(), 2),
+            'Median': round(func_data.median(), 2)
+        }
+        
+    return pd.DataFrame.from_dict(results, orient='index')

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from .runner import run_benchmarks
-from .stat import calculate_cpm, calculate_cps
+from .stat import calculate_cpm, calculate_cps, calculate_kstat
 
 
 def main():
@@ -67,11 +67,16 @@ def main():
 
             cpm_stats = calculate_cpm(results_df)
             print("\nCalls Per Minute (CPM) Statistics:")
-            print(cpm_stats.to_markdown())
-
-            cpm_stats = calculate_cps(results_df)
-            print("\nAverage CPS (Calls Per Second) per Function:")
             print(cpm_stats.to_markdown(index=False))
+
+            cps_stats = calculate_cps(results_df)
+            print("\nAverage CPS (Calls Per Second) per Function:")
+            print(cps_stats.to_markdown())
+
+            k_stats = calculate_kstat(results_df)
+            print("\nFunction Execution Time Statistics:")
+            print(k_stats.to_markdown())
+
             
             print("=" * 80)
             
