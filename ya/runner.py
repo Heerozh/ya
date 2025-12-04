@@ -62,8 +62,8 @@ async def run_single_executor(
     benchmark_func: Callable,
     benchmark_name: str,
     module: Any,
-    duration_minutes: int,
-) -> List[Tuple[int, float]]:
+    duration_minutes: float,
+) -> List[Tuple[float, float]]:
     """
     Run a single async executor for a benchmark.
     
@@ -73,10 +73,15 @@ async def run_single_executor(
     
     # Run setup function if exists
     setup_name = f"{benchmark_name}_setup"
+    setup_result = ()
     if hasattr(module, setup_name):
         setup_func = getattr(module, setup_name)
         if inspect.iscoroutinefunction(setup_func):
-            await setup_func()
+            setup_result = await setup_func()
+            if setup_result is None:
+                setup_result = ()
+            if not isinstance(setup_result, tuple):
+                setup_result = (setup_result,)
     
     # Record start time
     start_time = time.time()
@@ -88,7 +93,7 @@ async def run_single_executor(
         call_start = time.time()
         
         # Execute benchmark
-        await benchmark_func()
+        await benchmark_func(*setup_result)
         
         # Calculate execution time
         execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
@@ -101,7 +106,7 @@ async def run_single_executor(
     if hasattr(module, teardown_name):
         teardown_func = getattr(module, teardown_name)
         if inspect.iscoroutinefunction(teardown_func):
-            await teardown_func()
+            await teardown_func(*setup_result)
     
     return results
 
@@ -110,8 +115,8 @@ async def run_worker_async(
     script_path: str,
     benchmark_name: str,
     num_tasks: int,
-    duration_minutes: int,
-) -> List[Tuple[int, float]]:
+    duration_minutes: float,
+) -> List[Tuple[float, float]]:
     """
     Run multiple async tasks for a single benchmark in a worker process.
     
@@ -140,7 +145,7 @@ async def run_worker_async(
     return combined_results
 
 
-def worker_process_func(args: Tuple[str, str, int, int]) -> List[Tuple[int, float]]:
+def worker_process_func(args: Tuple[str, str, int, float]) -> List[Tuple[float, float]]:
     """
     Worker process function for multiprocessing.Pool.map.
     
@@ -158,7 +163,7 @@ def run_benchmarks(
     script_path: str,
     num_tasks: int,
     num_workers: int,
-    duration_minutes: int,
+    duration_minutes: float,
 ) -> pd.DataFrame:
     """
     Run all benchmarks and return results as a pandas DataFrame.

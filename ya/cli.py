@@ -35,9 +35,9 @@ def main():
     parser.add_argument(
         "-t",
         "--duration",
-        type=int,
-        default=1,
-        help="Test duration in minutes (default: 1)",
+        type=float,
+        default=5,
+        help="Test duration in minutes (default: 5)",
     )
 
     args = parser.parse_args()

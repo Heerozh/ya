@@ -30,18 +30,18 @@ Create a Python script with async functions that start with `benchmark_`:
 ```python
 import asyncio
 
-# This function will be benchmarked
-async def benchmark_my_function():
-    await asyncio.sleep(0.01)
-    # Your async code here
-
 # Optional: Setup function (runs once per async task before benchmarking)
 async def benchmark_my_function_setup():
     # Setup code here
-    pass
+    return data1, data2
+
+# This function will be benchmarked
+async def benchmark_my_function(data1, data2):
+    await asyncio.sleep(0.01)
+    # Your async code here
 
 # Optional: Teardown function (runs once per async task after benchmarking)
-async def benchmark_my_function_teardown():
+async def benchmark_my_function_teardown(data1, data2):
     # Cleanup code here
     pass
 ```

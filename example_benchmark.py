@@ -4,19 +4,19 @@ import asyncio
 
 
 # Example benchmark 1: Simple async sleep
-async def benchmark_simple_sleep():
+async def benchmark_simple_sleep(data1, data2):
     """A simple benchmark that sleeps for a short time."""
     await asyncio.sleep(0.01)
 
 
 async def benchmark_simple_sleep_setup():
     """Setup function for simple_sleep benchmark."""
-    pass
+    return 1, 2
 
 
-async def benchmark_simple_sleep_teardown():
+async def benchmark_simple_sleep_teardown(data1, data2):
     """Teardown function for simple_sleep benchmark."""
-    pass
+    print(f"Teardown with data: {data1}, {data2}")
 
 
 # Example benchmark 2: CPU-bound calculation
