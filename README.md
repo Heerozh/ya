@@ -54,7 +54,7 @@ async def benchmark_my_function_teardown(data1, data2):
 4. **Execution Loop**: Each task:
    - Calls `benchmark_<name>_setup()` if it exists
    - Enters a while loop for `-t` minutes
-   - Records [calendar minute, execution time] for each benchmark call
+   - Records [start time, execution time] for each benchmark call
    - Calls `benchmark_<name>_teardown()` if it exists
 5. **Result Collection**: Main process merges all results into a pandas DataFrame
 6. **Output**: Displays summary statistics and saves detailed results to `benchmark_results.csv`
