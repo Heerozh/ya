@@ -86,7 +86,6 @@ async def run_single_executor(
     while time.time() < end_time:
         # Record calendar minute and execution time
         call_start = time.time()
-        calendar_minute = datetime.fromtimestamp(call_start).minute
         
         # Execute benchmark
         await benchmark_func()
@@ -95,7 +94,7 @@ async def run_single_executor(
         execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
         
         # Store result
-        results.append((calendar_minute, execution_time))
+        results.append((call_start, execution_time))
     
     # Run teardown function if exists
     teardown_name = f"{benchmark_name}_teardown"
@@ -201,11 +200,11 @@ def run_benchmarks(
         
         # Combine results from all workers
         for worker_idx, results in enumerate(worker_results):
-            for calendar_minute, execution_time in results:
+            for timestamp, execution_time in results:
                 all_data.append({
                     "benchmark": benchmark_name,
                     "worker": worker_idx,
-                    "calendar_minute": calendar_minute,
+                    "timestamp": timestamp,
                     "execution_time": execution_time,
                 })
         

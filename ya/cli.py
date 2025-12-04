@@ -3,6 +3,7 @@
 import argparse
 import sys
 from pathlib import Path
+
 from .runner import run_benchmarks
 
 
@@ -34,8 +35,8 @@ def main():
         "-t",
         "--duration",
         type=int,
-        default=5,
-        help="Test duration in minutes (default: 5)",
+        default=1,
+        help="Test duration in minutes (default: 1)",
     )
 
     args = parser.parse_args()
