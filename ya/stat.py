@@ -113,7 +113,8 @@ def calculate_kstat(df):
 
         results[func] = {
             "Mean": round(func_data.mean(), 2),
-            "k95": round(np.percentile(func_data, 95), 2),
+            "k50": round(np.percentile(func_data, 50), 2),
+            "k90": round(np.percentile(func_data, 90), 2),
             "k99": round(np.percentile(func_data, 99), 2),
             "Count": len(func_data),
             "Min": round(func_data.min(), 2),

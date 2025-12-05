@@ -79,7 +79,7 @@ Full results are saved to `benchmark_results.csv` with columns:
 收集的统计数据为 Statistics：
 
 - CPM (calls per minute), average Throughput (CPS calls per second)
-- Mean, k95, k99 response times
+- Mean, k90, k99 response times
 
 注意，CPM/CPS数据，必须目标服务器跑满CPU才正确。
 
