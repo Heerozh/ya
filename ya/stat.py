@@ -45,7 +45,22 @@ def calculate_cpm(df):
         lambda x: f"{x:,}"
     )  # 千分位格式化
 
-    return cpm_stats[["benchmark", "execution_time", "execution_count"]]
+    cpm_stats = cpm_stats[["benchmark", "execution_time", "execution_count"]]
+
+    # 如果有超过3分钟的数据
+    if cpm_stats.shape[0] >= df.groupby("benchmark").ngroups * 3:
+        # cpm_stats = cpm_stats.groupby("benchmark").apply(
+        #     lambda x: x.iloc[1:-1]  # 去掉首尾各一行
+        # )
+
+        # 使用pivot_table转为列
+        cpm_stats["minutes"] = cpm_stats.groupby("benchmark").cumcount() + 1
+        cpm_stats["minutes"] = cpm_stats["minutes"].apply(lambda x: f"00:{x:02}:00")
+        cpm_stats = cpm_stats.pivot(index="benchmark", columns="minutes")[
+            "execution_count"
+        ]
+
+    return cpm_stats
 
 
 def calculate_cps(df):
@@ -116,7 +131,7 @@ def calculate_kstat(df):
             "k50": round(np.percentile(func_data, 50), 2),
             "k90": round(np.percentile(func_data, 90), 2),
             "k99": round(np.percentile(func_data, 99), 2),
-            "Count": len(func_data),
+            "Count": f"{len(func_data):,}",
             "Min": round(func_data.min(), 2),
             "Max": round(func_data.max(), 2),
             "Median": round(func_data.median(), 2),

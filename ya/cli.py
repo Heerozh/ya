@@ -1,8 +1,8 @@
 """Command line interface for ya benchmark framework."""
 
 import argparse
-import sys
 import multiprocessing
+import sys
 from pathlib import Path
 
 from .runner import run_benchmarks
@@ -75,7 +75,7 @@ def main():
 
             cpm_stats = calculate_cpm(results_df)
             print("\nCalls Per Minute (CPM) Statistics:")
-            print(cpm_stats.to_markdown(index=False))
+            print(cpm_stats.to_markdown())
 
             cps_stats = calculate_cps(results_df)
             print("\nAverage CPS (Calls Per Second) per Function:")
