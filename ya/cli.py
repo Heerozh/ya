@@ -53,7 +53,7 @@ def main():
         results_df = run_benchmarks(
             script_path=str(script_path.absolute()),
             num_tasks=num_tasks,
-            num_workers=args.workers,
+            num_workers=workers,
             duration_minutes=args.duration,
         )
         # import pandas as pd
