@@ -62,8 +62,7 @@ async def benchmark_my_function_teardown(data1, data2):
 ## Example
 
 ```bash
-# Run benchmark with 2 workers, 3 tasks per worker, for 1 minute
-ya my_benchmark.py -n 3 -w 2 -t 1
+ya my_benchmark.py -n 200 -t 1
 ```
 
 ## Output
