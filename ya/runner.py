@@ -38,7 +38,7 @@ def load_benchmark_module(script_path: str) -> Any:
     return module
 
 
-def discover_benchmarks(script_path: str) -> Dict[str, Callable]:
+def discover_benchmarks(script_path: str) -> Dict[str, list[str]]:
     """
     Discover all benchmark functions from a script.
 
@@ -47,16 +47,13 @@ def discover_benchmarks(script_path: str) -> Dict[str, Callable]:
     # Load the script as a module
     module = load_benchmark_module(script_path)
 
-    # Find all functions starting with 'benchmark_' but not ending with '_setup' or '_teardown'
+    # Find all functions starting with 'benchmark_'
     benchmarks = {}
     for name, obj in inspect.getmembers(module):
-        if (
-            name.startswith("benchmark_")
-            and not name.endswith("_setup")
-            and not name.endswith("_teardown")
-            and inspect.iscoroutinefunction(obj)
-        ):
-            benchmarks[name] = obj
+        if name.startswith("benchmark_") and inspect.iscoroutinefunction(obj):
+            # get fixtures
+            fixtures = list(inspect.signature(obj).parameters.keys())
+            benchmarks[name] = fixtures
 
     return benchmarks
 
@@ -64,6 +61,7 @@ def discover_benchmarks(script_path: str) -> Dict[str, Callable]:
 async def run_single_executor(
     benchmark_func: Callable,
     benchmark_name: str,
+    fixtures_func: dict[str, Callable],
     module: Any,
     duration_minutes: float,
 ) -> List[Tuple[float, float]]:
@@ -75,16 +73,17 @@ async def run_single_executor(
     results = []
 
     # Run setup function if exists
-    setup_name = f"{benchmark_name}_setup"
-    setup_result = ()
-    if hasattr(module, setup_name):
-        setup_func = getattr(module, setup_name)
-        if inspect.iscoroutinefunction(setup_func):
-            setup_result = await setup_func()
-            if setup_result is None:
-                setup_result = ()
-            if not isinstance(setup_result, tuple):
-                setup_result = (setup_result,)
+    fixture_enumerators = []
+    fixture_results = []
+    for fixture_name, fixture_func in fixtures_func.items():
+        if inspect.iscoroutinefunction(fixture_func):
+            fixture_results.append(await fixture_func())
+        elif inspect.isasyncgenfunction(fixture_func):
+            gen = fixture_func()
+            fixture_enumerators.append(gen)
+            fixture_results.append(await gen.__anext__())
+        else:
+            raise RuntimeError(f"Fixtures function {fixture_name} must be async")
 
     # Record start time
     start_time = time.time()
@@ -96,7 +95,7 @@ async def run_single_executor(
         call_start = time.time()
 
         # Execute benchmark
-        await benchmark_func(*setup_result)
+        await benchmark_func(*fixture_results)
 
         # Calculate execution time
         execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
@@ -105,11 +104,11 @@ async def run_single_executor(
         results.append((call_start, execution_time))
 
     # Run teardown function if exists
-    teardown_name = f"{benchmark_name}_teardown"
-    if hasattr(module, teardown_name):
-        teardown_func = getattr(module, teardown_name)
-        if inspect.iscoroutinefunction(teardown_func):
-            await teardown_func(*setup_result)
+    for gen in fixture_enumerators:
+        try:
+            await gen.__anext__()
+        except StopAsyncIteration:
+            pass
 
     return results
 
@@ -117,6 +116,7 @@ async def run_single_executor(
 async def run_worker_async(
     script_path: str,
     benchmark_name: str,
+    fixtures: list[str],
     num_tasks: int,
     duration_minutes: float,
 ) -> List[Tuple[float, float]]:
@@ -130,10 +130,13 @@ async def run_worker_async(
 
     # Get the benchmark function
     benchmark_func = getattr(module, benchmark_name)
+    fixtures_func = {fixture: getattr(module, fixture) for fixture in fixtures}
 
     # Create tasks using asyncio.gather
     tasks = [
-        run_single_executor(benchmark_func, benchmark_name, module, duration_minutes)
+        run_single_executor(
+            benchmark_func, benchmark_name, fixtures_func, module, duration_minutes
+        )
         for _ in range(num_tasks)
     ]
 
@@ -148,17 +151,21 @@ async def run_worker_async(
     return combined_results
 
 
-def worker_process_func(args: Tuple[str, str, int, float]) -> List[Tuple[float, float]]:
+def worker_process_func(
+    args: Tuple[str, str, list[str], int, float],
+) -> List[Tuple[float, float]]:
     """
     Worker process function for multiprocessing.Pool.map.
 
     This function runs the async event loop for the worker.
     """
-    script_path, benchmark_name, num_tasks, duration_minutes = args
+    script_path, benchmark_name, fixtures, num_tasks, duration_minutes = args
 
     # Run the async worker
     return asyncio.run(
-        run_worker_async(script_path, benchmark_name, num_tasks, duration_minutes)
+        run_worker_async(
+            script_path, benchmark_name, fixtures, num_tasks, duration_minutes
+        )
     )
 
 
@@ -185,8 +192,8 @@ def run_benchmarks(
     benchmarks = discover_benchmarks(script_path)
     if specific_task:
         benchmarks = {
-            name: func
-            for name, func in benchmarks.items()
+            name: fixtures
+            for name, fixtures in benchmarks.items()
             if re.match(specific_task, name) or specific_task in name
         }
 
@@ -202,12 +209,12 @@ def run_benchmarks(
     all_data = []
 
     # Run each benchmark
-    for benchmark_name in benchmarks.keys():
+    for benchmark_name, fixtures in benchmarks.items():
         print(f"\nRunning benchmark: {benchmark_name}")
 
         # Prepare arguments for workers
         worker_args = [
-            (script_path, benchmark_name, num_tasks, duration_minutes)
+            (script_path, benchmark_name, fixtures, num_tasks, duration_minutes)
             for _ in range(num_workers)
         ]
 

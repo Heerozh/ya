@@ -30,32 +30,29 @@ Create a Python script with async functions that start with `benchmark_`:
 ```python
 import asyncio
 
-# Optional: Setup function (runs once per async task before benchmarking)
-async def benchmark_my_function_setup():
-    # Setup code here
-    return data1, data2
+# Optional: fixture (if used, runs once per async task before benchmarking)
+async def redis_client():
+    yield redis.asyncio.Redis(host='localhost', port=6379, db=0)
+    # Teardown function (runs once per async task after benchmarking)
+    # Cleanup code here
+    await redis_client.close()
 
 # This function will be benchmarked
-async def benchmark_my_function(data1, data2):
-    await asyncio.sleep(0.01)
+async def benchmark_my_function(redis_client):
     # Your async code here
-
-# Optional: Teardown function (runs once per async task after benchmarking)
-async def benchmark_my_function_teardown(data1, data2):
-    # Cleanup code here
-    pass
+    await redis_client.ping()
 ```
 
 ## How It Works
 
-1. **Discovery**: Ya finds all async functions starting with `benchmark_` (excluding `_setup` and `_teardown` suffixes)
+1. **Discovery**: Ya finds all async functions starting with `benchmark_`
 2. **Worker Processes**: Spawns `cpu_core * 2` worker processes using `multiprocessing.Pool.map`
 3. **Async Tasks**: Each worker creates `num-tasks//worker` async tasks using `asyncio.gather`
 4. **Execution Loop**: Each task:
-   - Calls `benchmark_<name>_setup()` if it exists
+   - If `benchmark_<name>()` has any parameters, tries to call corresponding fixture functions to get arguments
    - Enters a while loop for `-t` minutes, calling `benchmark_<name>()` each iteration
-   - Records [start time, execution time] for each benchmark call
-   - Calls `benchmark_<name>_teardown()` if it exists
+   - Records [start time, execution time, return value] for each benchmark call
+   - Teardown started fixture functions after the loop
 5. **Result Collection**: Main process merges all results into a pandas DataFrame
 6. **Output**: Displays summary statistics and saves detailed results to `benchmark_results.csv`
 
