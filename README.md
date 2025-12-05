@@ -28,14 +28,15 @@ ya <script.py> -n <num_async_tasks> -t <duration_minutes>
 Create a Python script with async functions that start with `benchmark_`:
 
 ```python
-import asyncio
+import redis.asyncio
 
 # Optional: fixture (if used, runs once per async task before benchmarking)
 async def redis_client():
-    yield redis.asyncio.Redis(host='localhost', port=6379, db=0)
+    client = redis.asyncio.Redis(host='localhost', port=6379, db=0)
+    yield client
     # Teardown function (runs once per async task after benchmarking)
     # Cleanup code here
-    await redis_client.close()
+    await client.close()
 
 # This function will be benchmarked
 async def benchmark_my_function(redis_client):
