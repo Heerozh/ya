@@ -53,7 +53,7 @@ async def benchmark_my_function_teardown(data1, data2):
 3. **Async Tasks**: Each worker creates `num-tasks//worker` async tasks using `asyncio.gather`
 4. **Execution Loop**: Each task:
    - Calls `benchmark_<name>_setup()` if it exists
-   - Enters a while loop for `-t` minutes
+   - Enters a while loop for `-t` minutes, calling `benchmark_<name>()` each iteration
    - Records [start time, execution time] for each benchmark call
    - Calls `benchmark_<name>_teardown()` if it exists
 5. **Result Collection**: Main process merges all results into a pandas DataFrame
