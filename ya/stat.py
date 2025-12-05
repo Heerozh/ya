@@ -76,7 +76,7 @@ def calculate_cps(df):
 
         if len(trimmed_data) <= 1:
             # 如果数据太少，无法计算CPS
-            results[func] = 0
+            results[func] = {"CPS": "0.00"}
             continue
 
         # 计算时间跨度（秒）
