@@ -7,8 +7,8 @@ import multiprocessing
 import re
 import sys
 import time
-from datetime import datetime
 from typing import Any, Callable, Dict, List, Tuple
+from types import AsyncGeneratorType
 
 import pandas as pd
 
@@ -58,10 +58,44 @@ def discover_benchmarks(script_path: str) -> Dict[str, list[str]]:
     return benchmarks
 
 
+async def run_fixture(module, name, cache):
+    gens = []
+
+    # get fixture func
+    func = getattr(module, name)
+
+    # get fixture dependencies
+    dep_fixture = list(inspect.signature(func).parameters.keys())
+    args = []
+    if dep_fixture:
+        for dep_name in dep_fixture:
+            if dep_name in cache:
+                args.append(cache[dep_name])
+            else:
+                new_gens, dep = await run_fixture(module, dep_name, cache)
+                gens.extend(new_gens)
+                args.append(dep)
+
+    # get fixture value
+    value = None
+    if inspect.iscoroutinefunction(func):
+        value = await func(*args)
+    elif inspect.isasyncgenfunction(func):
+        gen = func(*args)
+        gens.append(gen)
+        value = await gen.__anext__()
+    else:
+        raise RuntimeError(f"Fixtures function {name} must be async")
+
+    # Cache the fixture value
+    cache[name] = value
+    return gens, value
+
+
 async def run_single_executor(
     benchmark_func: Callable,
     benchmark_name: str,
-    fixtures_func: dict[str, Callable],
+    fixture_names: list[str],
     module: Any,
     duration_minutes: float,
 ) -> List[Tuple[float, float, Any]]:
@@ -73,17 +107,13 @@ async def run_single_executor(
     results = []
 
     # Run setup function if exists
+    fixture_cache: Dict[str, Any] = {}
     fixture_enumerators = []
     fixture_results = []
-    for fixture_name, fixture_func in fixtures_func.items():
-        if inspect.iscoroutinefunction(fixture_func):
-            fixture_results.append(await fixture_func())
-        elif inspect.isasyncgenfunction(fixture_func):
-            gen = fixture_func()
-            fixture_enumerators.append(gen)
-            fixture_results.append(await gen.__anext__())
-        else:
-            raise RuntimeError(f"Fixtures function {fixture_name} must be async")
+    for fixture_name in fixture_names:
+        gens, value = await run_fixture(module, fixture_name, fixture_cache)
+        fixture_enumerators.extend(gens)
+        fixture_results.append(value)
 
     # Record start time
     start_time = time.time()
@@ -130,12 +160,11 @@ async def run_worker_async(
 
     # Get the benchmark function
     benchmark_func = getattr(module, benchmark_name)
-    fixtures_func = {fixture: getattr(module, fixture) for fixture in fixtures}
 
     # Create tasks using asyncio.gather
     tasks = [
         run_single_executor(
-            benchmark_func, benchmark_name, fixtures_func, module, duration_minutes
+            benchmark_func, benchmark_name, fixtures, module, duration_minutes
         )
         for _ in range(num_tasks)
     ]

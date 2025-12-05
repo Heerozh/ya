@@ -3,19 +3,23 @@
 import asyncio
 import random
 
+init_value = 0
+
 
 async def data1():
     """
     fixture with task scope:
     run once per benchmark task, cleanup after it ends
     """
-    yield 1
+    global init_value
+    init_value += 1
+    yield init_value
     # 压测结束后执行到这
     print("cleanup data1")
 
 
-async def data2():
-    return 2
+async def data2(data1):
+    return data1 + 1
 
 
 # Example benchmark 1: Simple async sleep
