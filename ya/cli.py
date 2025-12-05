@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import multiprocessing
 from pathlib import Path
 
 from .runner import run_benchmarks
@@ -23,14 +24,7 @@ def main():
         "--num-tasks",
         type=int,
         default=10,
-        help="Number of async tasks per worker (default: 10)",
-    )
-    parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=5,
-        help="Number of worker processes (default: 5)",
+        help="Number of TOTAL async tasks (default: 10)",
     )
     parser.add_argument(
         "-t",
@@ -42,6 +36,12 @@ def main():
 
     args = parser.parse_args()
 
+    # get number of workers
+    cpu = multiprocessing.cpu_count()
+    workers = cpu * 2
+    workers = args.num_tasks if workers > args.num_tasks else workers
+    num_tasks = max(1, int(args.num_tasks // workers))
+
     # Validate script path
     script_path = Path(args.script)
     if not script_path.exists():
@@ -52,7 +52,7 @@ def main():
     try:
         results_df = run_benchmarks(
             script_path=str(script_path.absolute()),
-            num_tasks=args.num_tasks,
+            num_tasks=num_tasks,
             num_workers=args.workers,
             duration_minutes=args.duration,
         )

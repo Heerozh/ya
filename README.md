@@ -2,27 +2,26 @@
 
 ya is a Python async benchmark framework for measuring the performance of asynchronous functions.
 
-ya 是一个简易的 Python 高性能异步基准测试框架，主要用于压测吞吐量。
-因为基于异步，所以可以很少的 workers 跑出非常高的吞吐量。
+ya 是一个简易的 Python 高性能多进程异步基准测试框架，主要用于压测吞吐量。
+因为基于异步，所以可以单机跑出非常高的吞吐量。
 
 ## Installation
 
 ```bash
-pip install -e .
+uv add --dev https://github.com/Heerozh/ya.git
 ```
 
 ## Usage
 
 ```bash
-ya <script.py> -n <num_tasks> -w <num_workers> -t <duration_minutes>
+ya <script.py> -n <num_async_tasks> -t <duration_minutes>
 ```
 
 ### Options
 
 - `script.py`: Path to Python script containing benchmark functions
-- `-n, --num-tasks`: Number of async tasks per worker process (default: 10)
-- `-w, --workers`: Number of worker processes (default: 5)
-- `-t, --duration`: Test duration in minutes (default: 5)
+- `-n, --num-tasks`: Number of TOTAL async tasks (default: 10)
+- `-t, --duration`: Test duration in minutes (default: 5), can be float
 
 ## Writing Benchmarks
 
@@ -50,8 +49,8 @@ async def benchmark_my_function_teardown(data1, data2):
 ## How It Works
 
 1. **Discovery**: Ya finds all async functions starting with `benchmark_` (excluding `_setup` and `_teardown` suffixes)
-2. **Worker Processes**: Spawns `-w` worker processes using `multiprocessing.Pool.map`
-3. **Async Tasks**: Each worker creates `-n` async tasks using `asyncio.gather`
+2. **Worker Processes**: Spawns `cpu_core * 2` worker processes using `multiprocessing.Pool.map`
+3. **Async Tasks**: Each worker creates `num-tasks//worker` async tasks using `asyncio.gather`
 4. **Execution Loop**: Each task:
    - Calls `benchmark_<name>_setup()` if it exists
    - Enters a while loop for `-t` minutes
