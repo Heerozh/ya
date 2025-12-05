@@ -88,6 +88,7 @@ Remember, CPM/CPS data is only accurate if the target server has 100% CPU utiliz
 ## 输出示例 Output Example
 
 Found 2 benchmark(s): benchmark_cpu_calculation, benchmark_simple_sleep
+
 Running with 24 workers, 8 tasks per worker, for 0.1 minute(s)
 
 Calls Per Minute (CPM) Statistics:
