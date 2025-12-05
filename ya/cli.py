@@ -23,8 +23,8 @@ def main():
         "-n",
         "--num-tasks",
         type=int,
-        default=10,
-        help="Number of TOTAL async tasks (default: 10)",
+        default=200,
+        help="Number of TOTAL async tasks (default: 200)",
     )
     parser.add_argument(
         "-t",

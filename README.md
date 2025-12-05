@@ -20,7 +20,7 @@ ya <script.py> -n <num_async_tasks> -t <duration_minutes>
 ### Options
 
 - `script.py`: Path to Python script containing benchmark functions
-- `-n, --num-tasks`: Number of TOTAL async tasks (default: 10)
+- `-n, --num-tasks`: Number of TOTAL async tasks (default: 200)
 - `-t, --duration`: Test duration in minutes (default: 5), can be float
 
 ## Writing Benchmarks
@@ -82,25 +82,31 @@ Full results are saved to `benchmark_results.csv` with columns:
 - CPM (calls per minute), average Throughput (CPS calls per second)
 - Mean, k95, k99 response times
 
-## 输出示例 Output Example：
+注意，CPM/CPS数据，必须目标服务器跑满CPU才正确。
+Remember, CPM/CPS data is only accurate if the target server has 100% CPU utilization.
+
+## 输出示例 Output Example
+
+Found 2 benchmark(s): benchmark_cpu_calculation, benchmark_simple_sleep
+Running with 24 workers, 8 tasks per worker, for 0.1 minute(s)
 
 Calls Per Minute (CPM) Statistics:
 
-| benchmark                 | execution_time      | execution_count |
-| :------------------------ | :------------------ | :-------------- |
-| benchmark_cpu_calculation | 2025-12-04 17:11:00 | 19,181          |
-| benchmark_simple_sleep    | 2025-12-04 17:11:00 | 19,100          |
+| benchmark                 | execution_time            | execution_count   |
+|:--------------------------|:--------------------------|:------------------|
+| benchmark_cpu_calculation | 2025-12-05 12:05:00+08:00 | 93,750            |
+| benchmark_simple_sleep    | 2025-12-05 12:05:00+08:00 | 69,000            |
 
 Average CPS (Calls Per Second) per Function:
 
-|                           | CPS          |
-| :------------------------ | :----------- |
-| benchmark_cpu_calculation | 3,187,834.68 |
-| benchmark_simple_sleep    | 3,190,359.31 |
+|                           | CPS           |
+|:--------------------------|:--------------|
+| benchmark_cpu_calculation | 15,366,455.71 |
+| benchmark_simple_sleep    | 11,531,440.76 |
 
 Function Execution Time Statistics:
 
-|                           |  Mean |   k95 |   k99 | Count |   Min |   Max | Median |
-| :------------------------ | ----: | ----: | ----: | ----: | ----: | ----: | -----: |
-| benchmark_cpu_calculation | 15.66 | 16.13 | 16.28 | 19181 |  1.15 | 16.78 |  15.57 |
-| benchmark_simple_sleep    | 15.72 | 16.08 | 16.15 | 19100 | 15.11 | 21.15 |  15.56 |
+|                           |   Mean |   k95 |   k99 |   Count |   Min |   Max |   Median |
+|:--------------------------|-------:|------:|------:|--------:|------:|------:|---------:|
+| benchmark_cpu_calculation |  12.3  | 20.71 | 26.52 |   93750 |  1.11 | 58.84 |    14.49 |
+| benchmark_simple_sleep    |  16.72 | 22.06 | 24.31 |   69000 | 10.06 | 48.35 |    15.82 |
