@@ -33,6 +33,12 @@ def main():
         default=5,
         help="Test duration in minutes (default: 5)",
     )
+    parser.add_argument(
+        "--task",
+        type=str,
+        default="",
+        help="Regex expression to filter benchmark task to run (default: all)",
+    )
 
     args = parser.parse_args()
 
@@ -55,6 +61,7 @@ def main():
             num_tasks=num_tasks,
             num_workers=workers,
             duration_minutes=args.duration,
+            specific_task=args.task,
         )
         # import pandas as pd
 

@@ -4,6 +4,7 @@ import asyncio
 import importlib.util
 import inspect
 import multiprocessing
+import re
 import sys
 import time
 from datetime import datetime
@@ -166,6 +167,7 @@ def run_benchmarks(
     num_tasks: int,
     num_workers: int,
     duration_minutes: float,
+    specific_task: str = "",
 ) -> pd.DataFrame:
     """
     Run all benchmarks and return results as a pandas DataFrame.
@@ -181,6 +183,12 @@ def run_benchmarks(
     """
     # Discover benchmarks
     benchmarks = discover_benchmarks(script_path)
+    if specific_task:
+        benchmarks = {
+            name: func
+            for name, func in benchmarks.items()
+            if re.match(specific_task, name) or specific_task in name
+        }
 
     if not benchmarks:
         print("No benchmark functions found (functions should start with 'benchmark_')")
