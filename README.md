@@ -20,7 +20,7 @@ ya <script.py> -n <num_async_tasks> -t <duration_minutes>
 ### Options
 
 - `script.py`: Path to Python script containing benchmark functions
-- `-n, --num-tasks`: Number of TOTAL async tasks (default: 200)
+- `-n, --num-tasks`: Number of TOTAL async tasks (light thread), (default: 200)
 - `-t, --duration`: Test duration in minutes (default: 5), can be float
 
 ## Writing Benchmarks
