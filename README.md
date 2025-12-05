@@ -82,6 +82,7 @@ Full results are saved to `benchmark_results.csv` with columns:
 - Mean, k95, k99 response times
 
 注意，CPM/CPS数据，必须目标服务器跑满CPU才正确。
+
 Remember, CPM/CPS data is only accurate if the target server has 100% CPU utilization.
 
 ## 输出示例 Output Example
