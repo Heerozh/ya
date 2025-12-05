@@ -1,6 +1,7 @@
 """Example benchmark script for testing ya framework."""
 
 import asyncio
+import random
 
 
 async def data1():
@@ -28,6 +29,6 @@ async def benchmark_simple_sleep(data1, data2):
 async def benchmark_cpu_calculation():
     """A benchmark that does some CPU-intensive work."""
     # Simulate some work
-    result = sum(i * i for i in range(1000))
     await asyncio.sleep(0.001)
-    return result
+    # 返回正态分布的int范围随机数
+    return int(random.gauss(5, 0.5))

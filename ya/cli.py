@@ -6,7 +6,7 @@ import multiprocessing
 from pathlib import Path
 
 from .runner import run_benchmarks
-from .stat import calculate_cpm, calculate_cps, calculate_kstat
+from .stat import calculate_cpm, calculate_cps, calculate_kstat, calculate_rtn_stat
 
 
 def main():
@@ -84,6 +84,10 @@ def main():
             k_stats = calculate_kstat(results_df)
             print("\nFunction Execution Time Statistics:")
             print(k_stats.to_markdown())
+
+            rtn_stats = calculate_rtn_stat(results_df)
+            print("\nReturn Value Distribution Statistics:")
+            print(rtn_stats.to_markdown())
 
             print("=" * 80)
 

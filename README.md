@@ -108,3 +108,14 @@ Function Execution Time Statistics:
 |:--------------------------|-------:|------:|------:|--------:|------:|------:|---------:|
 | benchmark_cpu_calculation |  12.3  | 20.71 | 26.52 |   93750 |  1.11 | 58.84 |    14.49 |
 | benchmark_simple_sleep    |  16.72 | 22.06 | 24.31 |   69000 | 10.06 | 48.35 |    15.82 |
+
+Return Value Distribution Statistics:
+
+|    | benchmark                 |   return_value |   count |   percentage |
+|---:|:--------------------------|---------------:|--------:|-------------:|
+|  3 | benchmark_cpu_calculation |              5 |   36174 |        47.75 |
+|  2 | benchmark_cpu_calculation |              4 |   36143 |        47.71 |
+|  1 | benchmark_cpu_calculation |              3 |    1721 |         2.27 |
+|  4 | benchmark_cpu_calculation |              6 |    1715 |         2.26 |
+|  0 | benchmark_cpu_calculation |              2 |       1 |         0    |
+|  6 | benchmark_simple_sleep    |              2 |   75592 |       100    |

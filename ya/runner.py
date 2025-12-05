@@ -64,7 +64,7 @@ async def run_single_executor(
     fixtures_func: dict[str, Callable],
     module: Any,
     duration_minutes: float,
-) -> List[Tuple[float, float]]:
+) -> List[Tuple[float, float, Any]]:
     """
     Run a single async executor for a benchmark.
 
@@ -95,13 +95,13 @@ async def run_single_executor(
         call_start = time.time()
 
         # Execute benchmark
-        await benchmark_func(*fixture_results)
+        rtn = await benchmark_func(*fixture_results)
 
         # Calculate execution time
         execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
 
         # Store result
-        results.append((call_start, execution_time))
+        results.append((call_start, execution_time, rtn))
 
     # Run teardown function if exists
     for gen in fixture_enumerators:
@@ -119,7 +119,7 @@ async def run_worker_async(
     fixtures: list[str],
     num_tasks: int,
     duration_minutes: float,
-) -> List[Tuple[float, float]]:
+) -> List[Tuple[float, float, Any]]:
     """
     Run multiple async tasks for a single benchmark in a worker process.
 
@@ -153,7 +153,7 @@ async def run_worker_async(
 
 def worker_process_func(
     args: Tuple[str, str, list[str], int, float],
-) -> List[Tuple[float, float]]:
+) -> List[Tuple[float, float, Any]]:
     """
     Worker process function for multiprocessing.Pool.map.
 
@@ -224,13 +224,14 @@ def run_benchmarks(
 
         # Combine results from all workers
         for worker_idx, results in enumerate(worker_results):
-            for timestamp, execution_time in results:
+            for timestamp, execution_time, rtn in results:
                 all_data.append(
                     {
                         "benchmark": benchmark_name,
                         "worker": worker_idx,
                         "timestamp": timestamp,
                         "execution_time": execution_time,
+                        "return_value": rtn,
                     }
                 )
 

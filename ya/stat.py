@@ -123,3 +123,34 @@ def calculate_kstat(df):
         }
 
     return pd.DataFrame.from_dict(results, orient="index")
+
+
+# 返回值分布统计
+def calculate_rtn_stat(df):
+    """
+    统计返回值的分布情况（次数和占比）
+    """
+    df = df.copy()
+
+    # 为了防止返回值包含不可哈希类型（如dict/list），统一转换为字符串进行统计
+    df["return_value"] = df["return_value"].astype(str)
+
+    # 按 benchmark 和 返回值 分组统计次数
+    rtn_stats = (
+        df.groupby(["benchmark", "return_value"]).size().reset_index(name="count")
+    )
+
+    # 计算每个 benchmark 的总调用次数，用于计算百分比
+    total_counts = df.groupby("benchmark").size().reset_index(name="total")
+
+    # 合并数据并计算百分比
+    rtn_stats = pd.merge(rtn_stats, total_counts, on="benchmark")
+    rtn_stats["percentage"] = (rtn_stats["count"] / rtn_stats["total"] * 100).round(2)
+
+    # 按 benchmark 和 count 倒序排列，让出现最多的返回值排在前面
+    rtn_stats = rtn_stats.sort_values(["benchmark", "count"], ascending=[True, False])
+
+    # 每个benchmark只显示前n个
+    rtn_stats = rtn_stats.groupby("benchmark").head(5)
+
+    return rtn_stats[["benchmark", "return_value", "count", "percentage"]]
