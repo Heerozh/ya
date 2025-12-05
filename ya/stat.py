@@ -82,7 +82,7 @@ def calculate_cps(df):
         # 计算时间跨度（秒）
         time_span_seconds = (
             trimmed_data["timestamp"].max() - trimmed_data["timestamp"].min()
-        ) / 1000.0
+        )
 
         if time_span_seconds > 0:
             # 计算CPS（执行次数/时间跨度）
