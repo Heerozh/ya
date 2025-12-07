@@ -74,19 +74,19 @@ def main():
             print("=" * 80)
 
             cpm_stats = calculate_cpm(results_df)
-            print("\nCalls Per Minute (CPM) Statistics:")
+            print("\nCalls Per Minute (CPM) Statistics:\n")
             print(cpm_stats.to_markdown())
 
             cps_stats = calculate_cps(results_df)
-            print("\nAverage CPS (Calls Per Second) per Function:")
+            print("\nAverage CPS (Calls Per Second) per Function:\n")
             print(cps_stats.to_markdown())
 
             k_stats = calculate_kstat(results_df)
-            print("\nFunction Execution Time Statistics:")
+            print("\nFunction Execution Time Statistics:\n")
             print(k_stats.to_markdown())
 
             rtn_stats = calculate_rtn_stat(results_df)
-            print("\nReturn Value Distribution Statistics:")
+            print("\nReturn Value Distribution Statistics:\n")
             print(rtn_stats.to_markdown())
 
             print("=" * 80)
