@@ -8,7 +8,6 @@ import re
 import sys
 import time
 from typing import Any, Callable, Dict, List, Tuple
-from types import AsyncGeneratorType
 
 import pandas as pd
 
@@ -248,8 +247,13 @@ def run_benchmarks(
         ]
 
         # Run workers using multiprocessing.Pool.map
-        with multiprocessing.Pool(processes=num_workers) as pool:
-            worker_results = pool.map(worker_process_func, worker_args)
+        if num_workers > 1:
+            print(f"  Using multiprocessing with {num_workers} workers")
+            with multiprocessing.Pool(processes=num_workers) as pool:
+                worker_results = pool.map(worker_process_func, worker_args)
+        else:
+            print("  Running in the main process")
+            worker_results = [worker_process_func(args) for args in worker_args]
 
         # Combine results from all workers
         for worker_idx, results in enumerate(worker_results):

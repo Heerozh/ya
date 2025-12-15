@@ -39,13 +39,23 @@ def main():
         default="",
         help="Regex expression to filter benchmark task to run (default: all)",
     )
+    parser.add_argument(
+        "-p",
+        "--processes",
+        type=int,
+        default=0,
+        help="Number of worker processes (default: CPU cores * 2)",
+    )
 
     args = parser.parse_args()
 
     # get number of workers
-    cpu = multiprocessing.cpu_count()
-    workers = cpu * 2
-    workers = args.num_tasks if workers > args.num_tasks else workers
+    cpu = multiprocessing.cpu_count() * 2
+    if args.processes <= 0:
+        processes = cpu
+    else:
+        processes = args.processes
+    workers = args.num_tasks if processes > args.num_tasks else processes
     num_tasks = max(1, int(args.num_tasks // workers))
 
     # Validate script path
