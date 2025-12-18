@@ -25,6 +25,8 @@ def load_benchmark_module(script_path: str) -> Any:
     # Create a unique module name based on the script path and timestamp
     # to avoid conflicts when loading multiple modules
     module_name = f"benchmark_module_{abs(hash(script_path))}"
+    if module_name in sys.modules:
+        return sys.modules[module_name]
 
     spec = importlib.util.spec_from_file_location(module_name, script_path)
     if spec is None or spec.loader is None:
