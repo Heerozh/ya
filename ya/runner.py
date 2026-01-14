@@ -126,7 +126,11 @@ async def run_single_executor(
         call_start = time.time()
 
         # Execute benchmark
-        rtn = await benchmark_func(*fixture_results)
+        try:
+            rtn = await benchmark_func(*fixture_results)
+        except Exception as e:
+            print(f"Error in benchmark '{benchmark_name}': {e}， thread exited.")
+            break
 
         # Calculate execution time
         execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
