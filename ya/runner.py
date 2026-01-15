@@ -105,10 +105,10 @@ async def run_single_executor(
 
     Returns a list of [calendar_minute, execution_time] tuples.
     """
-    results = []
+    results: list[tuple] = []
 
     # Run setup function if exists
-    fixture_cache: Dict[str, Any] = {}
+    fixture_cache: dict[str, Any] = {}
     fixture_enumerators = []
     fixture_results = []
     for fixture_name in fixture_names:
@@ -176,6 +176,11 @@ async def run_worker_async(
 
     # Gather results from all tasks
     all_results = await asyncio.gather(*tasks)
+
+    # task teardown
+    task_teardown = getattr(module, "task_teardown", None)
+    if task_teardown:
+        await task_teardown()
 
     # Flatten results
     combined_results = []
