@@ -33,7 +33,9 @@ def calculate_cpm(df):
 
     # 按函数名和分钟分组统计
     cpm_stats = (
-        df.groupby(["benchmark", "minute"]).size().reset_index(name="execution_count")
+        df.groupby(["benchmark", "minute"])
+        .execution_count.sum()
+        .reset_index(name="execution_count")
     )
 
     # 重命名列
@@ -101,9 +103,9 @@ def calculate_cps(df):
 
         if time_span_seconds > 0:
             # 计算CPS（执行次数/时间跨度）
-            cps = len(trimmed_data) / time_span_seconds
+            cps = trimmed_data.execution_count.sum() / time_span_seconds
         else:
-            cps = len(trimmed_data)  # 如果时间跨度为0，返回执行次数
+            cps = trimmed_data.execution_count.sum()  # 如果时间跨度为0，返回执行次数
 
         results[func] = {"CPS": f"{cps:,.2f}"}  # 千分位，保留2位小数
 
@@ -125,13 +127,14 @@ def calculate_kstat(df):
 
     for func in functions:
         func_data = df[df["benchmark"] == func].execution_time.copy()
+        func_count = df[df["benchmark"] == func].execution_count.sum()
 
         results[func] = {
             "Mean": round(func_data.mean(), 2),
             "k50": round(np.percentile(func_data, 50), 2),
             "k90": round(np.percentile(func_data, 90), 2),
             "k99": round(np.percentile(func_data, 99), 2),
-            "Count": f"{len(func_data):,}",
+            "Count": f"{func_count:,}",
             "Min": round(func_data.min(), 2),
             "Max": round(func_data.max(), 2),
             "Median": round(func_data.median(), 2),
@@ -152,12 +155,15 @@ def calculate_rtn_stat(df):
 
     # 按 benchmark 和 返回值 分组统计次数
     rtn_stats = (
-        df.groupby(["benchmark", "return_value"]).size().reset_index(name="count")
+        df.groupby(["benchmark", "return_value"])
+        .execution_count.sum()
+        .reset_index(name="count")
     )
 
     # 计算每个 benchmark 的总调用次数，用于计算百分比
-    total_counts = df.groupby("benchmark").size().reset_index(name="total")
-
+    total_counts = (
+        df.groupby("benchmark").execution_count.sum().reset_index(name="total")
+    )
     # 合并数据并计算百分比
     rtn_stats = pd.merge(rtn_stats, total_counts, on="benchmark")
     rtn_stats["percentage"] = (rtn_stats["count"] / rtn_stats["total"] * 100).round(2)

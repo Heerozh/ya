@@ -138,6 +138,29 @@ async def run_single_executor(
         # Store result
         results.append((call_start, execution_time, rtn, 1))
 
+    # 如果收集的数据点过多，统一按 rtn + call_start 秒数合并
+    # 合并会导致k90之类指标不准确，所以只在数据点过多时合并
+    # 一个5w/s的测试，持续5分钟，会产生1500w个数据点，合并后变成300个数据点
+    if len(results) > 10_000_000:
+        merged: dict[tuple[Any, int], list[float | int]] = {}
+        for call_start, execution_time, rtn, count in results:
+            call_start_sec = int(call_start)
+            key = (rtn, call_start_sec)
+            if key in merged:
+                merged[key][0] += execution_time
+                merged[key][1] += count
+            else:
+                merged[key] = [execution_time, count]
+
+            results = [
+                (float(call_start_sec), total_time, rtn, total_count)
+                for (rtn, call_start_sec), (total_time, total_count) in merged.items()
+            ]
+        print(
+            f"Raw data points collected: {len(results)}, Merged data points: {len(merged)}",
+            end="\r",
+        )
+
     # Run teardown function if exists
     for gen in fixture_enumerators:
         try:
@@ -280,13 +303,12 @@ def run_benchmarks(
                     }
                 )
 
-        print(f"  Collected {sum(len(r) for r in worker_results)} data points")
+        print(f"  Collected {sum(len(r) for r in worker_results)} data points\033[K")
 
     # Create DataFrame
     if all_data:
         df = pd.DataFrame(all_data)
         df.execution_time /= df.execution_count
-        df.drop(columns=["execution_count"], inplace=True)
         return df
     else:
         return pd.DataFrame()
