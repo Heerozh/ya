@@ -99,7 +99,7 @@ async def run_single_executor(
     fixture_names: list[str],
     module: Any,
     duration_minutes: float,
-) -> List[Tuple[float, float, Any]]:
+) -> List[Tuple[float, float, Any, int]]:
     """
     Run a single async executor for a benchmark.
 
@@ -136,7 +136,7 @@ async def run_single_executor(
         execution_time = (time.time() - call_start) * 1000.0  # in milliseconds
 
         # Store result
-        results.append((call_start, execution_time, rtn))
+        results.append((call_start, execution_time, rtn, 1))
 
     # Run teardown function if exists
     for gen in fixture_enumerators:
@@ -154,7 +154,7 @@ async def run_worker_async(
     fixtures: list[str],
     num_tasks: int,
     duration_minutes: float,
-) -> List[Tuple[float, float, Any]]:
+) -> List[Tuple[float, float, Any, int]]:
     """
     Run multiple async tasks for a single benchmark in a worker process.
 
@@ -192,7 +192,7 @@ async def run_worker_async(
 
 def worker_process_func(
     args: Tuple[str, str, list[str], int, float],
-) -> List[Tuple[float, float, Any]]:
+) -> List[Tuple[float, float, Any, int]]:
     """
     Worker process function for multiprocessing.Pool.map.
 
@@ -268,7 +268,7 @@ def run_benchmarks(
 
         # Combine results from all workers
         for worker_idx, results in enumerate(worker_results):
-            for timestamp, execution_time, rtn in results:
+            for timestamp, execution_time, rtn, count in results:
                 all_data.append(
                     {
                         "benchmark": benchmark_name,
@@ -276,6 +276,7 @@ def run_benchmarks(
                         "timestamp": timestamp,
                         "execution_time": execution_time,
                         "return_value": rtn,
+                        "execution_count": count,
                     }
                 )
 
@@ -284,6 +285,8 @@ def run_benchmarks(
     # Create DataFrame
     if all_data:
         df = pd.DataFrame(all_data)
+        df.execution_time /= df.execution_count
+        df.drop(columns=["execution_count"], inplace=True)
         return df
     else:
         return pd.DataFrame()
